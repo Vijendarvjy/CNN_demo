@@ -2,6 +2,7 @@
 import streamlit as st
 import torch
 import torch.nn as nn
+import torch.quantization # Added for quantization
 from torchvision import transforms
 from PIL import Image
 import os
@@ -37,11 +38,17 @@ device = torch.device("cpu")
 
 # Load the trained model
 @st.cache_resource
-def load_model(model_path='model_quantized.pt', num_classes=2):
+def load_model(model_path='model_quantized.pt', num_classes=2): # Changed to model_quantized.pt
     model = SimpleCNN(num_classes=num_classes).to(device)
-    model.load_state_dict(torch.load(model_path, map_location=device))
-    model.eval()
-    return model
+    # Apply dynamic quantization before loading state_dict
+    quantized_model = torch.quantization.quantize_dynamic(
+        model, 
+        {nn.Linear, nn.Conv2d}, 
+        dtype=torch.qint8
+    )
+    quantized_model.load_state_dict(torch.load(model_path, map_location=device))
+    quantized_model.eval()
+    return quantized_model # Return the quantized model
 
 # Image transformations (must be the same as training/testing)
 preprocess = transforms.Compose([
@@ -79,3 +86,4 @@ if uploaded_file is not None:
 
     st.write(f"Prediction: **{predicted_class}**")
     st.write(f"Confidence: {confidence:.2f}")
+
