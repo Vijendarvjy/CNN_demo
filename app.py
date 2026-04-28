@@ -37,7 +37,7 @@ device = torch.device("cpu")
 
 # Load the trained model
 @st.cache_resource
-def load_model(model_path='model.pt', num_classes=2):
+def load_model(model_path='model_quantized.pt', num_classes=2):
     model = SimpleCNN(num_classes=num_classes).to(device)
     model.load_state_dict(torch.load(model_path, map_location=device))
     model.eval()
